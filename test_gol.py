@@ -6,7 +6,7 @@ from gol import parse_world, print_world, alive_neighbor_count, Coords
 class GameOfLifeTests(unittest.TestCase):
 	def assert_neighbors(self, str, p, expected):		
 		rows = [s.strip() for s in str.split('\n')]
-		x,y,world = parse_world(rows)
+		world = parse_world(rows)
 		#print_world(world)
 		count = alive_neighbor_count(Coords(p[0],p[1]), world)
 		self.assertEqual(expected, count)

@@ -8,15 +8,16 @@ import sys
 import os
 
 Coords = namedtuple('Coords', ['x', 'y'])
+World = namedtuple('World', ['size_x', 'size_y', 'state'])
 
-def get_world(size_x,size_y, seed=[]):
+def get_world(size_x,size_y, seeds=[]):
 	world = [[False for y in xrange(size_y)] for x in xrange(size_x)]
-	for c in seed:
+	for c in seeds:
 		world[c[0]][c[1]] = True
-	return world
+	return World(size_x, size_y, state)
 
 def print_world(world):	
-	for row in world:
+	for row in world.state:
 		for c in row:			
 			print('#', end='') if c else print('.', end='') 
 		print('')
@@ -29,30 +30,35 @@ def parse_world(rows):
 		for j, c in enumerate(row):
 			if c == '#':
 				seed.append((i,j))
-	return size_x, size_y, get_world(size_x, size_y, seed)
+	return get_world(size_x, size_y, seed)
 
-def alive_neighbor_count(c, world)	:
-	neighbors = []
-	top_row = world[max(c.x-1,0):c.x] # top row		
-	bottom_row = world[c.x+1:c.x+2] # bottom row
+def get_first_or_default(list, default=None):
+	for i in list:
+		return i
+	return default
+
+def alive_neighbor_count(c, world):
+	''' Determine neighbor count of the given cell '''	
+
+	top = get_first_or_default(world[max(c.x-1,0):c.x],[]) # top row		
+	bottom = get_first_or_default(world[c.x+1:c.x+2],[]) # bottom row
 	left = world[c.x][c.y-1:c.y] # left
-	right = world[c.x][c.y+1:c.y+2] # right
-	top = top_row[0][max(0,c.y-1):c.y+2] if top_row else []
-	bottom = bottom_row[0][max(0,c.y-1):c.y+2] if bottom_row else []	
+	right = world[c.x][c.y+1:c.y+2] # right	
 	return sum(left + right + top + bottom)
 
-def simulate(size_x, size_y, world):
-	next = get_world(size_x, size_y)
+def simulate(world):
+	''' Play one round of game of life and return the new state '''	
+
+	next = get_world(world.size_x, world.size_y)
 	for x, row in enumerate(world):
 		for y, c in enumerate(row):
-			count = alive_neighbor_count(Coords(x,y), world)			
-			# print (x,y, world[x][y], count)
-			if world[x][y]:
+			count = alive_neighbor_count(Coords(x,y), world)					
+			if world.state[x][y]:
 				if (count == 2) or (count == 3):
-					next[x][y] = True
+					next.state[x][y] = True
 			else:
 				if count == 3:
-					next[x][y] = True					
+					next.state[x][y] = True					
 	return next
 
 if __name__ == '__main__':
@@ -60,21 +66,15 @@ if __name__ == '__main__':
 		print('Usage: %s SEED_FILE NO_GENERATIONS' % sys.argv[0])
 		exit(0)
 
-	no_rounds = int(sys.argv[2])
-	seed = []
-	size_x = 0
-	size_y = 0
+	no_rounds = int(sys.argv[2])	
 	current = None
 	with open(sys.argv[1], 'r') as f:		
 		rows = [row.strip() for row in f]
-		size_x, size_y, current = parse_world(rows)
+		current = parse_world(rows)
 		
 	for i in xrange(no_rounds):	
 		os.system('clear')
 		print("Round %s" % i)
 		print_world(current)
-		current = simulate(size_x, size_y, current)
+		current = simulate(current)
 	 	sleep(0.1)
-
-
-
